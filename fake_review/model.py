@@ -72,16 +72,10 @@ class LitClassification(pl.LightningModule):
     def share_batch(self, batch, state):
         input_ids, attention_masks, labels = batch
 
-        # print(input_ids.shape, attention_masks.shape, labels.shape)
-
-        
-
         out = self.model(input_ids=input_ids, 
                         attention_mask=attention_masks, 
                         labels=labels) 
         
-        # print(out)
-        # assert False
         loss = out.loss
 
         # self.log('train_loss', loss)

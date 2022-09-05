@@ -71,16 +71,18 @@ class LitClassification(pl.LightningModule):
         return optimizer
 
     def share_batch(self, batch, state):
-        x1, x2, y = batch
+        input_ids, attention_masks, labels = batch
 
-        out = self.model(x1, x2) 
+        out = self.model(input_ids=input_ids, 
+                        attention_mask=attention_masks, 
+                        labels=labels) 
         
-        loss = F.cross_entropy(out, y)
+        loss = out.loss
 
         # self.log('train_loss', loss)
         self.log(f"{state}_loss", loss)
 
-        acc = self.acc(out, y)
+        acc = self.acc(out.logits, labels)
         self.log(f'{state}_acc', acc)
 
         # self.log('train_acc', acc, on_step=True, on_epoch=False)
@@ -108,5 +110,6 @@ model_lit = LitClassification()
 trainer = pl.Trainer(gpus=1, 
                     max_epochs=2,
                     limit_train_batches=0.5,
+                    default_root_dir="/content/drive/MyDrive/log_fake_review"
                     )
 trainer.fit(model_lit)
