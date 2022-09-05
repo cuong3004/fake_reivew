@@ -25,8 +25,8 @@ class CusttomData:
                 return_tensors = 'pt',     # Return pytorch tensors.
             )
 
-        input_id = encoded_dict['input_ids']
-        attention_mask = encoded_dict['attention_mask']
+        input_id = encoded_dict['input_ids'][0]
+        attention_mask = encoded_dict['attention_mask'][0]
         label = self.label_dir[label]
         
         return input_id, attention_mask, label
