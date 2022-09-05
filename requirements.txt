@@ -11,6 +11,5 @@
 
 tqdm
 boto3
-requests
 transformers
 pytorch_lightning

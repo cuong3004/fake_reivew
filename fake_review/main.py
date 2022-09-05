@@ -22,16 +22,17 @@ class LitClassification(pl.LightningModule):
     def __init__(self):
         super().__init__()
 
-        df = pd.read_csv("fake reviews dataset.csv")
-        df_train, df_test = train_test_split(
-            df, random_state=42, shuffle=True, test_size=0.2
-        )
-        df_train, df_valid = train_test_split(
-            df_train, random_state=42, shuffle=True, test_size=0.1
-        )
+        df_train = pd.read_csv("fake_review_train.csv")
+        df_test = pd.read_csv("fake_review_test.csv")
+        # df_train, df_test = train_test_split(
+        #     df, random_state=42, shuffle=True, test_size=0.2
+        # )
+        # df_train, df_valid = train_test_split(
+        #     df_train, random_state=42, shuffle=True, test_size=0.1
+        # )
 
         self.df_train = df_train
-        self.df_valid = df_valid
+        self.df_valid = df_test
         self.df_test = df_test
 
 
@@ -104,5 +105,8 @@ class LitClassification(pl.LightningModule):
 # %%
 model_lit = LitClassification()
 # %%
-trainer = pl.Trainer(gpus=1, max_epochs=2)
+trainer = pl.Trainer(gpus=1, 
+                    max_epochs=2,
+                    limit_train_batches=0.5,
+                    )
 trainer.fit(model_lit)
