@@ -1,0 +1,6 @@
+README.md
+setup.py
+fake_review.egg-info/PKG-INFO
+fake_review.egg-info/SOURCES.txt
+fake_review.egg-info/dependency_links.txt
+fake_review.egg-info/top_level.txt

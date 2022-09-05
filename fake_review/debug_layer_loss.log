@@ -1,0 +1,31 @@
+2022-08-26 17:43:01,259 The args: Namespace(aug_train=True, cache_dir='', data_dir='sd', data_url='', do_eval=False, do_lower_case=True, eval_batch_size=32, eval_step=50, gradient_accumulation_steps=1, learning_rate=5e-05, max_seq_length=128, no_cuda=False, num_train_epochs=10.0, output_dir='sd', pred_distill=False, seed=42, student_model='sd', task_name='cola', teacher_model='bert-base-uncased', temperature=1.0, train_batch_size=32, warmup_proportion=0.1, weight_decay=0.0001)
+2022-08-26 17:43:01,261 device: cpu n_gpu: 0
+2022-08-26 17:43:27,424 The args: Namespace(aug_train=True, cache_dir='', data_dir='sd', data_url='', do_eval=False, do_lower_case=True, eval_batch_size=32, eval_step=50, gradient_accumulation_steps=1, learning_rate=5e-05, max_seq_length=128, no_cuda=False, num_train_epochs=10.0, output_dir='sd', pred_distill=False, seed=42, student_model='sd', task_name='cola', teacher_model='../../bert-base-uncased', temperature=1.0, train_batch_size=32, warmup_proportion=0.1, weight_decay=0.0001)
+2022-08-26 17:43:27,426 device: cpu n_gpu: 0
+2022-08-26 17:43:27,428 Model config {
+  "architectures": [
+    "BertForMaskedLM"
+  ],
+  "attention_probs_dropout_prob": 0.1,
+  "gradient_checkpointing": false,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.1,
+  "hidden_size": 768,
+  "initializer_range": 0.02,
+  "intermediate_size": 3072,
+  "layer_norm_eps": 1e-12,
+  "max_position_embeddings": 512,
+  "model_type": "bert",
+  "num_attention_heads": 12,
+  "num_hidden_layers": 12,
+  "pad_token_id": 0,
+  "position_embedding_type": "absolute",
+  "pre_trained": "",
+  "training": "",
+  "transformers_version": "4.6.0.dev0",
+  "type_vocab_size": 2,
+  "use_cache": true,
+  "vocab_size": 30522
+}
+
+2022-08-26 17:43:29,197 Loading model ../../bert-base-uncased\pytorch_model.bin
