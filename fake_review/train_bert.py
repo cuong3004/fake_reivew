@@ -1,5 +1,5 @@
 # %%
-from transformers import BertModel, BertTokenizer, AdamW, AutoModel, AutoTokenizer, pipeline, BertForSequenceClassification, BertConfig
+from transformers import BertModel, BertTokenizer, AdamW, AutoModel, AutoTokenizer, pipeline, BertForSequenceClassification
 from transformers import get_linear_schedule_with_warmup
 import pytorch_lightning as pl
 import torchmetrics
@@ -10,8 +10,6 @@ from fake_review.dataset_custom import CusttomData
 import pandas as pd
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-import torch.nn as nn
-import torch 
 
 # from transformers import BertTokenizer, BertModel
 # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -37,16 +35,11 @@ class LitClassification(pl.LightningModule):
         self.df_valid = df_test
         self.df_test = df_test
 
+
+
+
+        self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-
-        config = BertConfig("config.json")
-
-        
-        self.student_model = BertForSequenceClassification(config=config, num_labels=2)
-        self.teacher_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
-        self.teacher_model.eval()
-
-        self.fit_dense = nn.Linear(config.hidden_size, fit_size=768)
         self.acc = torchmetrics.Accuracy()
 
     
@@ -64,12 +57,8 @@ class LitClassification(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer_student = AdamW(self.student_model.parameters(),
-                  lr = 1e-4, # args.learning_rate - default is 5e-5,
-                  eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
-                )
-        optimizer_fit = AdamW(self.fit_dense.parameters(),
-                  lr = 1e-4, # args.learning_rate - default is 5e-5,
+        optimizer = AdamW(self.parameters(),
+                  lr = 5e-5, # args.learning_rate - default is 5e-5,
                   eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
                 )
         # total_steps = len(self.train_dataloader()) * Epoch
@@ -79,60 +68,21 @@ class LitClassification(pl.LightningModule):
         #                 num_warmup_steps = 0, # Default value in run_glue.py
         #                 num_training_steps = total_steps)
         # return [optimizer], [scheduler]
-        return [optimizer_student, optimizer_fit], []
+        return optimizer
 
     def share_batch(self, batch, state):
         input_ids, attention_masks, labels = batch
 
-        out_student = self.student_model(input_ids=input_ids, 
+        out = self.model(input_ids=input_ids, 
                         attention_mask=attention_masks, 
-                        # labels=labels,
-                        output_hidden_states=True,
-                        output_attentions=True,
-                        ) 
-        with torch.no_grad():
-            out_teacher = self.student_model(input_ids=input_ids, 
-                            attention_mask=attention_masks, 
-                            # labels=labels,
-                            output_hidden_states=True,
-                            output_attentions=True,
-                            ) 
-
-        att_loss = 0.
-        rep_loss = 0.
-        cls_loss = 0.
-
-        student_logits, student_atts, student_reps = out_student.logits, out_student.attentions, out_student.hidden_states
-        teacher_logits, teacher_atts, teacher_reps = out_student.logits, out_student.attentions, out_student.hidden_states
-
-        teacher_layer_num = len(teacher_atts)
-        student_layer_num = len(student_atts)
-        assert teacher_layer_num % student_layer_num == 0
-        layers_per_block = int(teacher_layer_num / student_layer_num)
-        new_teacher_atts = [teacher_atts[i * layers_per_block + layers_per_block - 1]
-                            for i in range(student_layer_num)]
+                        labels=labels) 
         
-        for student_att, teacher_att in zip(student_atts, new_teacher_atts):
-            # student_att = torch.where(student_att <= -1e2, torch.zeros_like(student_att).to(self.device),
-            #                             student_att)
-            # teacher_att = torch.where(teacher_att <= -1e2, torch.zeros_like(teacher_att).to(self.device),
-            #                             teacher_att)
-
-            tmp_loss = F.mse_loss(student_att, teacher_att)
-            att_loss += tmp_loss
-
-        new_teacher_reps = [teacher_reps[i * layers_per_block] for i in range(student_layer_num + 1)]
-        new_student_reps = student_reps
-        for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-            tmp_loss = F.mse_loss(student_rep, teacher_rep)
-            rep_loss += tmp_loss
-
-        loss = rep_loss + att_loss
+        loss = out.loss
 
         # self.log('train_loss', loss)
         self.log(f"{state}_loss", loss)
 
-        acc = self.acc(student_logits, labels)
+        acc = self.acc(out.logits, labels)
         self.log(f'{state}_acc', acc)
 
         # self.log('train_acc', acc, on_step=True, on_epoch=False)
