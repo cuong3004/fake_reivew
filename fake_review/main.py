@@ -49,6 +49,9 @@ class LitClassification(pl.LightningModule):
         config = BertConfig.from_json_file("config_delight.json")
 
         
+        from delight_config import args 
+        config.args = args
+
         self.student_model = DenyBertForSequenceClassification(config=config)
         self.teacher_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
         self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/lightning_logs/version_0/checkpoints/bert_finetuned.bin"))

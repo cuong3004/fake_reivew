@@ -24,7 +24,7 @@ from turtle import forward
 class DenyBertForSequenceClassification(BertForSequenceClassification):
     def __init__(self, config):
         super().__init__(config)
-        self.bert = DenyBertModel(config)
+        self.bert = BertDelightModel(config)
 
 class DenyBertModel(BertModel):
     def __init__(self, config, add_pooling_layer=True):
@@ -90,4 +90,92 @@ class DenyBertAttention(BertAttention):
         hidden_states = self.dextra_layer(hidden_states)
         return super().forward(hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, past_key_value, output_attentions)
     
+
+
+# class BertDeLightEmbeddings(BertEmbeddings):
+#     def __init__(self, config):
+#         super().__init__(config)
+#         self.word_embeddings = DExTraEmb(
+#             config.args,
+#             self.word_embeddings,
+#         )
+
+class BertDelightModel(BertModel):
+    def __init__(self, config, add_pooling_layer=True):
+        super().__init__(config, add_pooling_layer)
+
+        # self.embeddings = BertDeLightEmbeddings(config)
+        self.encoder = BertDeLightEncoder(config)
+
+class BertDeLightAttention(BertAttention):
+    def __init__(self, config, width_multiplier, dextra_depth, position_embedding_type=None, dextra_proj=2):
+        super().__init__(config, position_embedding_type)
+        self.embed_dim = config.args.delight_emb_out_dim
+        assert self.embed_dim % dextra_proj == 0
+
+        self.proj_dim = self.embed_dim // dextra_proj
+
+        self.dextra_layer = DExTraUnit(in_features=self.embed_dim,
+                                       in_proj_features=self.proj_dim,
+                                       out_features=self.proj_dim,
+                                       width_multiplier=width_multiplier,
+                                       dextra_depth=dextra_depth,
+                                       dextra_dropout=config.args.delight_dropout,
+                                       max_glt_groups=config.args.delight_enc_max_groups,
+                                       act_type=config.args.act_type,
+                                       use_bias=True,
+                                       norm_type=config.args.norm_type,
+                                       glt_shuffle=config.args.glt_shuffle,
+                                       is_iclr_version=config.args.define_iclr
+                                       )
+                                       
+        def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.FloatTensor] = None, head_mask: Optional[torch.FloatTensor] = None, encoder_hidden_states: Optional[torch.FloatTensor] = None, encoder_attention_mask: Optional[torch.FloatTensor] = None, past_key_value: Optional[Tuple[Tuple[torch.FloatTensor]]] = None, output_attentions: Optional[bool] = False) -> Tuple[torch.Tensor]:
+            hidden_states = self.dextra_layer(hidden_states)
+            return super().forward(hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, past_key_value, output_attentions)
     
+
+class BertDeLightLayer(BertLayer):
+    def __init__(self, config, width_multiplier, dextra_depth):
+        super().__init__(config)
+        self.attention = BertDeLightAttention(config, width_multiplier, dextra_depth)
+
+class BertDeLightEncoder(BertEncoder):
+    def __init__(self, config):
+        super().__init__(config)
+
+        self.layer = nn.ModuleList([])
+        if config.args.delight_enc_scaling == 'block' and (config.args.delight_enc_min_depth == config.args.delight_enc_max_depth):
+            config.args.delight_enc_scaling = 'uniform'
+
+
+        if config.args.delight_enc_scaling == 'uniform':
+            assert config.args.delight_enc_min_depth == config.args.delight_enc_max_depth
+            self.layer.extend(
+                [BertDeLightLayer(config=config,
+                                width_multiplier=config.args.delight_enc_width_mult,
+                                dextra_depth=config.args.delight_enc_min_depth)
+                 for _ in range(config.args.define_enc_layers)]
+            )
+        else:
+            assert config.args.delight_enc_min_depth < config.args.delight_enc_max_depth
+
+            dextra_depths = np.linspace(start=config.args.delight_enc_min_depth,
+                                         stop=config.args.delight_enc_max_depth,
+                                         num=config.args.delight_enc_layers,
+                                         dtype=np.int32)
+
+            depth_ratio = (config.args.delight_enc_max_depth * 1.0) / config.args.delight_enc_min_depth
+
+            width_multipliers = np.linspace(start=config.args.delight_enc_width_mult,
+                                      stop=config.args.delight_enc_width_mult + (depth_ratio - 1.0), # subtraction by 1 for max==min case
+                                      num=config.args.delight_enc_layers,
+                                      dtype=np.float32
+                                      )
+
+            self.layer.extend(
+                [BertDeLightLayer(config=config,
+                                    width_multiplier=round(width_multipliers[idx], 3),
+                                    dextra_depth=layer_i)
+                 for idx, layer_i in enumerate(dextra_depths)
+                 ]
+            )
