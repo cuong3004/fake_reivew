@@ -39,11 +39,12 @@ class LitClassification(pl.LightningModule):
 
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
-        config = BertConfig("config.json")
+        config = BertConfig.from_json_file("config.json")
 
         
-        self.student_model = BertForSequenceClassification(config=config, num_labels=2)
+        self.student_model = BertForSequenceClassification(config=config)
         self.teacher_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
+        self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/lightning_logs/version_0/checkpoints/bert_finetuned.bin"))
         self.teacher_model.eval()
 
         self.fit_dense = nn.Linear(config.hidden_size, fit_size=768)
