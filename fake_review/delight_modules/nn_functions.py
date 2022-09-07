@@ -6,10 +6,10 @@ __maintainer__ = "Sachin Mehta"
 import torch
 from torch import nn
 from torch.nn import functional as F
-from ..delight_modules.normalization_layers import get_norm_layer
-from ..delight_modules.activation_layers import get_activation_layer
+from .normalization_layers import get_norm_layer
+from .activation_layers import get_activation_layer
 from typing import Optional
-from ..delight_modules.print_utilities import *
+from .print_utilities import *
 
 
 class GroupLinear(nn.Module):

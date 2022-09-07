@@ -8,12 +8,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from ..delight_modules.activation_layers import get_activation_layer
-from ..delight_modules.normalization_layers import get_norm_layer
-from ..delight_modules.nn_functions import get_weight_layer
-from ..delight_modules import DEFAULT_WIDTH_MULTIPLIER, DEFAULT_MIN_DEXTRA_LAYERS
-from ..delight_modules.dextra_unit import DExTraUnit
-from ..delight_modules.single_head_attention import SingleHeadAttention
+from .activation_layers import get_activation_layer
+from .normalization_layers import get_norm_layer
+from .nn_functions import get_weight_layer
+from . import DEFAULT_WIDTH_MULTIPLIER, DEFAULT_MIN_DEXTRA_LAYERS
+from .dextra_unit import DExTraUnit
+from .single_head_attention import SingleHeadAttention
 
 
 class DeLighTTransformerEncoderLayer(nn.Module):

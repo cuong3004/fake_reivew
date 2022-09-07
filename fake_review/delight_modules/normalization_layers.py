@@ -5,7 +5,7 @@ __maintainer__ = "Sachin Mehta"
 
 import torch
 from torch import nn
-from ..delight_modules.print_utilities import *
+from .print_utilities import *
 
 
 class BatchNorm(nn.Module):

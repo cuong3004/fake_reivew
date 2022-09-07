@@ -6,7 +6,7 @@ __maintainer__ = "Sachin Mehta"
 import torch
 import math
 from torch import nn
-from ..delight_modules.print_utilities import *
+from .print_utilities import *
 
 
 class GELU(torch.nn.Module):

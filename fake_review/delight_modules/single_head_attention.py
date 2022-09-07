@@ -13,7 +13,7 @@ import torch.nn.functional as F
 # from fairseq import utils
 from torch import Tensor, nn
 # from fairseq.incremental_decoding_utils import with_incremental_state
-from ..delight_modules.nn_functions import get_weight_layer
+from .nn_functions import get_weight_layer
 
 def softmax(x, dim: int, onnx_trace: bool = False):
     if onnx_trace:

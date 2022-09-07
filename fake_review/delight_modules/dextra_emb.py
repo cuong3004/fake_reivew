@@ -5,8 +5,8 @@ __maintainer__ = "Sachin Mehta"
 
 import torch
 from torch import nn
-from ..delight_modules.drop_layers import RecurrentDropout
-from ..delight_modules.dextra_unit import DExTraUnit
+from .drop_layers import RecurrentDropout
+from .dextra_unit import DExTraUnit
 import math
 
 

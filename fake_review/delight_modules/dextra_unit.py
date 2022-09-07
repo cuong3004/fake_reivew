@@ -5,12 +5,12 @@ __maintainer__ = "Sachin Mehta"
 
 import torch
 from torch import nn
-from ..delight_modules.nn_functions import get_weight_layer
-from ..delight_modules.activation_layers import get_activation_layer
+from .nn_functions import get_weight_layer
+from .activation_layers import get_activation_layer
 import math
 import numpy as np
 from typing import Optional
-from ..delight_modules.print_utilities import *
+from .print_utilities import *
 
 
 class DExTraUnit(nn.Module):
