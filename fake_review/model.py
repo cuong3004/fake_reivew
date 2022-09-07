@@ -24,7 +24,7 @@ from turtle import forward
 class DenyBertForSequenceClassification(BertForSequenceClassification):
     def __init__(self, config):
         super().__init__(config)
-        self.bert = DenyBertModel()
+        self.bert = DenyBertModel(config)
 
 class DenyBertModel(BertModel):
     def __init__(self, config, add_pooling_layer=True):
