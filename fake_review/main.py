@@ -47,6 +47,8 @@ class LitClassification(pl.LightningModule):
         self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/lightning_logs/version_0/checkpoints/bert_finetuned.bin"))
         self.teacher_model.eval()
 
+        print(self.teacher_model)
+
         self.fit_dense = nn.Linear(config.hidden_size, 768)
         self.acc = torchmetrics.Accuracy()
 
@@ -65,14 +67,17 @@ class LitClassification(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        optimizer_student = AdamW(self.student_model.parameters(),
+
+        params = list(self.student_model.parameters()) + list(self.fit_dense.parameters())
+
+        optimizer = AdamW(params,
                   lr = 1e-4, # args.learning_rate - default is 5e-5,
                   eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
                 )
-        optimizer_fit = AdamW(self.fit_dense.parameters(),
-                  lr = 1e-4, # args.learning_rate - default is 5e-5,
-                  eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
-                )
+        # optimizer_fit = AdamW(self.fit_dense.parameters(),
+        #           lr = 1e-4, # args.learning_rate - default is 5e-5,
+        #           eps = 1e-8 # args.adam_epsilon  - default is 1e-8.
+        #         )
         # total_steps = len(self.train_dataloader()) * Epoch
 
         # # Create the learning rate scheduler.
@@ -80,7 +85,9 @@ class LitClassification(pl.LightningModule):
         #                 num_warmup_steps = 0, # Default value in run_glue.py
         #                 num_training_steps = total_steps)
         # return [optimizer], [scheduler]
-        return [optimizer_student, optimizer_fit], []
+        # return [optimizer_student, optimizer_fit], []
+        
+        return optimizer
 
     def share_batch(self, batch, state):
         input_ids, attention_masks, labels = batch
@@ -92,7 +99,7 @@ class LitClassification(pl.LightningModule):
                         output_attentions=True,
                         ) 
         with torch.no_grad():
-            out_teacher = self.student_model(input_ids=input_ids, 
+            out_teacher = self.teacher_model(input_ids=input_ids, 
                             attention_mask=attention_masks, 
                             # labels=labels,
                             output_hidden_states=True,
@@ -104,7 +111,9 @@ class LitClassification(pl.LightningModule):
         cls_loss = 0.
 
         student_logits, student_atts, student_reps = out_student.logits, out_student.attentions, out_student.hidden_states
-        teacher_logits, teacher_atts, teacher_reps = out_student.logits, out_student.attentions, out_student.hidden_states
+        teacher_logits, teacher_atts, teacher_reps = out_teacher.logits, out_teacher.attentions, out_teacher.hidden_states
+
+        # print("Teacher output", teacher_logits[0].shape, teacher_atts[0].shape, teacher_reps[0].shape)
 
         teacher_layer_num = len(teacher_atts)
         student_layer_num = len(student_atts)
@@ -125,7 +134,8 @@ class LitClassification(pl.LightningModule):
         new_teacher_reps = [teacher_reps[i * layers_per_block] for i in range(student_layer_num + 1)]
         new_student_reps = student_reps
         for student_rep, teacher_rep in zip(new_student_reps, new_teacher_reps):
-            tmp_loss = F.mse_loss(student_rep, teacher_rep)
+            # print(student_rep.shape, teacher_rep.shape, )
+            tmp_loss = F.mse_loss(self.fit_dense(student_rep), teacher_rep)
             rep_loss += tmp_loss
 
         loss = rep_loss + att_loss
@@ -159,7 +169,7 @@ class LitClassification(pl.LightningModule):
 model_lit = LitClassification()
 # %%
 trainer = pl.Trainer(gpus=1, 
-                    max_epochs=1,
+                    max_epochs=50,
                     limit_train_batches=0.5,
                     default_root_dir="/content/drive/MyDrive/log_fake_review"
                     )
