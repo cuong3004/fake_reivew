@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.nn as nn
 import torch 
-from model import DenyBertForSequenceClassification
+from model import DenyBertForSequenceClassification, BertDelightModel
 
 # from transformers import BertTokenizer, BertModel
 # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -68,11 +68,11 @@ class LitClassification(pl.LightningModule):
         return DataLoader(dataset, batch_size=64, num_workers=2)
     
     def val_dataloader(self):
-        dataset = CusttomData(self.df_train, self.tokenizer)
+        dataset = CusttomData(self.df_valid, self.tokenizer)
         return DataLoader(dataset, batch_size=64, num_workers=2)
     
     def test_dataloader(self):
-        dataset = CusttomData(self.df_train, self.tokenizer)
+        dataset = CusttomData(self.df_test, self.tokenizer)
         return DataLoader(dataset, batch_size=64, num_workers=2)
 
 
