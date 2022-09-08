@@ -56,6 +56,8 @@ class DExTraUnit(nn.Module):
         assert in_features % max_glt_groups == 0, '# of Input features ({}) should be divisible by max groups ({})'.format(
             in_features, max_glt_groups)
 
+        # print("in_features", in_features)
+
         self.in_features = in_features
         self.in_proj_features = in_proj_features
         self.out_features = out_features
@@ -68,9 +70,12 @@ class DExTraUnit(nn.Module):
         self.norm_type = norm_type
         self.glt_shuffle = False if is_iclr_version else glt_shuffle  # no shuffling in ICLR version
 
+        # self.in_proj_features = 128
+
         self.input_layer = get_weight_layer(name='linear',
                                             in_features=self.in_features,
                                             out_features=self.in_proj_features,
+                                            # out_features=200,
                                             use_bias=True,
                                             norm_type=self.norm_type,
                                             act_type=self.act_type,
@@ -142,6 +147,7 @@ class DExTraUnit(nn.Module):
 
         # divide the space linearly between input_features and max_features
         output_sizes = np.linspace(in_features, max_features, mid_point, dtype=np.int).tolist()
+        # print("output_sizes", output_sizes)
         # invert lists to get the reduction groups and sizes
         inv_output_sizes = output_sizes[::-1]
         inv_group_list = groups_per_layer[::-1]
@@ -164,9 +170,13 @@ class DExTraUnit(nn.Module):
             # output should be divisible by ith groups as well as i+1th group
             # Enforcing it to be divisble by 8 so that we can maximize tensor usage
             g_l = max(groups_per_layer[i + 1], groups_per_layer[i], 8)
+            # print("g_l",g_l)
+            # print("output_sizes", output_sizes)
             out_dim_l = int(math.ceil(output_sizes[i] / g_l)) * g_l
             inp_dim_l1 = out_dim_l + in_features
 
+            # print(out_dim_l)
+            # print("inp_dim_l1", inp_dim_l1)
             if out_dim_l % 8 != 0:
                 print_warning_message(
                     'To maximize tensor usage, output dimension {} should be divisible by 8'.format(out_dim_l))
@@ -205,6 +215,7 @@ class DExTraUnit(nn.Module):
 
         # divide the space linearly between input_features and max_features
         output_sizes = np.linspace(in_features, max_features, n_layers)
+        
         output_sizes = output_sizes.astype(np.int).tolist()
         output_sizes = output_sizes[1:]
 
@@ -252,7 +263,7 @@ class DExTraUnit(nn.Module):
         for i, layer_i in enumerate(self.dextra_layers):
             # Transform Layer
             out = layer_i(out)
-
+            
             g_next_layer = self.groups_per_layer[i + 1] if i < self.num_glt_layers - 1 else 1
             if g_next_layer == 1:
                 # Linear layer is connected to everything so shuffle and split is useless for G=1
@@ -280,6 +291,8 @@ class DExTraUnit(nn.Module):
         '''
 
         # process input
+        # print("input_layer", x.shape)
+        # print(self.input_layer)
         x = self.input_layer(x)
         n_dims = x.dim()
 
@@ -294,6 +307,8 @@ class DExTraUnit(nn.Module):
             x = self.forward_dextra(x)
         else:
             raise NotImplementedError
+
+        # print("x.shape",x.shape)
         return x
 
     def compute_macs_params(self):

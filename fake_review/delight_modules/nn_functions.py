@@ -34,7 +34,7 @@ class GroupLinear(nn.Module):
         :param act_type: Activation type (e.g., Gelu or ReLU)
         '''
         super(GroupLinear, self).__init__()
-
+        # print("n_groups", n_groups)
         if in_features % n_groups != 0:
             err_msg = "Input dimensions ({}) must be divisible by n_groups ({})".format(in_features, n_groups)
             print_error_message(err_msg)

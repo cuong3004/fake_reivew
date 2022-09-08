@@ -27,12 +27,13 @@ ADAPTIVE_SCALE_FACTOR = 2
 def base_architecture(args):
     # DeLighT Embedding layer
     args.adaptive_input = getattr(args, "adaptive_input", False)
-    args.delight_emb_map_dim = getattr(args, "delight_emb_map_dim", 128)
-    args.delight_emb_out_dim = getattr(args, "delight_emb_out_dim", 128)
+    args.delight_emb_map_dim = getattr(args, "delight_emb_map_dim", 384)
+    args.delight_emb_out_dim = getattr(args, "delight_emb_out_dim", 384)
     # compute the max groups in GLT
     assert args.delight_emb_out_dim % MIN_ELEMENTS_PER_GROUP == 0, 'remainder({}, {}) should be equal to 0'.format(
         args.delight_emb_out_dim, MIN_ELEMENTS_PER_GROUP)
     max_groups = 2 ** math.ceil(math.log(args.delight_emb_out_dim // MIN_ELEMENTS_PER_GROUP, 2))
+    # max_groups = 8
 
     args.delight_emb_max_groups = getattr(args, "delight_emb_max_groups", max_groups)
     args.delight_emb_dropout = getattr(args, "delight_emb_dropout", DEFAULT_DROPOUT)
