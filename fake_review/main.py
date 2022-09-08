@@ -57,7 +57,7 @@ class LitClassification(pl.LightningModule):
         self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/lightning_logs/version_0/checkpoints/bert_finetuned.bin"))
         self.teacher_model.eval()
 
-        print(self.teacher_model)
+        # print(self.teacher_model)
 
         self.fit_dense = nn.Linear(config.hidden_size, 768)
         self.acc = torchmetrics.Accuracy()
