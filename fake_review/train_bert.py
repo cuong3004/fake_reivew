@@ -41,7 +41,9 @@ class LitClassification(pl.LightningModule):
         self.model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
         self.tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
         self.acc = torchmetrics.Accuracy()
-
+        self.f1 = torchmetrics.F1Score(num_classes=1, multiclass=False)
+        self.pre = torchmetrics.Precision(num_classes=1, multiclass=False)
+        self.rec = torchmetrics.Recall(num_classes=1, multiclass=False)
     
     def train_dataloader(self):
         dataset = CusttomData(self.df_train, self.tokenizer)
@@ -83,7 +85,13 @@ class LitClassification(pl.LightningModule):
         self.log(f"{state}_loss", loss)
 
         acc = self.acc(out.logits, labels)
+        pre = self.pre(out.logits, labels)
+        rec = self.rec(out.logits, labels)
+        f1 = self.f1(out.logits, labels)
         self.log(f'{state}_acc', acc)
+        self.log(f'{state}_rec', rec)
+        self.log(f'{state}_pre', pre)
+        self.log(f'{state}_f1', f1)
 
         # self.log('train_acc', acc, on_step=True, on_epoch=False)
         return loss
@@ -104,12 +112,21 @@ class LitClassification(pl.LightningModule):
 # from fake_review.transformer import TinyBertForSequenceClassification, BertTokenizer
 
 # tokenizer = BertTokenizer("../../bert-base-uncased/vocab.txt")
+from pytorch_lightning.callbacks import ModelCheckpoint
+filename = f"model"
+checkpoint_callback = ModelCheckpoint(
+    filename=filename,
+    save_top_k=1,
+    verbose=True,
+    monitor='valid_loss',
+    mode='min',
+)
 # %%
 model_lit = LitClassification()
 # %%
 trainer = pl.Trainer(gpus=1, 
-                    max_epochs=1,
-                    limit_train_batches=0.5,
+                    max_epochs=5,
+                    # limit_train_batches=0.5,
                     default_root_dir="/content/drive/MyDrive/log_fake_review"
                     )
 trainer.fit(model_lit)
