@@ -6,12 +6,13 @@ from operator import mod
 from typing import List, Optional, Tuple, Union
 from numpy import dtype
 from transformers import BertConfig, BertForMaskedLM, BertModel
-from transformers.models.bert.modeling_bert import BertEmbeddings, BertAttention, BertLayer, BertEncoder, BertForSequenceClassification
+from transformers.models.bert.modeling_bert import BertEmbeddings, BertAttention, BertSelfAttention, BertLayer, BertEncoder, BertForSequenceClassification, BertSelfOutput
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 import torch
 import torch.nn as nn
 import numpy as np
 from delight_modules.dextra_unit import DExTraUnit
+import copy 
 
 class TinyBertForSequenceClassification(BertForSequenceClassification):
     def forward(self, input_ids: Optional[torch.Tensor] = None, attention_mask: Optional[torch.Tensor] = None, token_type_ids: Optional[torch.Tensor] = None, position_ids: Optional[torch.Tensor] = None, head_mask: Optional[torch.Tensor] = None, inputs_embeds: Optional[torch.Tensor] = None, labels: Optional[torch.Tensor] = None, output_attentions: Optional[bool] = None, output_hidden_states: Optional[bool] = None, return_dict: Optional[bool] = None) -> Union[Tuple[torch.Tensor], SequenceClassifierOutput]:
@@ -110,20 +111,28 @@ class BertDelightModel(BertModel):
 
         # self.embeddings = BertDeLightEmbeddings(config)
         self.encoder = BertDeLightEncoder(config)
+    
+class BertDeLightSelfOutput(BertSelfOutput):
+    def __init__(self, config):
+        super().__init__(config)
+        # print(config.hidden_size/2)
+        self.dense = nn.Linear(int(config.hidden_size/2), config.hidden_size)
 
-class BertDeLightAttention(BertAttention):
+class BertDelightSelfAttention(BertSelfAttention):
     def __init__(self, config, width_multiplier, dextra_depth, position_embedding_type=None, dextra_proj=2):
-        super().__init__(config, position_embedding_type)
+        config_new = copy.copy(config)
+        config_new.hidden_size = int(config_new.hidden_size/2)
+        super().__init__(config_new, position_embedding_type)
         self.embed_dim = config.args.delight_emb_out_dim
         assert self.embed_dim % dextra_proj == 0
-
+        
         self.proj_dim = self.embed_dim // dextra_proj
 
         # print(config.args.delight_enc_max_groups)
 
         self.dextra_layer = DExTraUnit(in_features=self.embed_dim,
                                        in_proj_features=self.proj_dim,
-                                       out_features=self.proj_dim*2,
+                                       out_features=self.proj_dim,
                                        width_multiplier=width_multiplier,
                                        dextra_depth=dextra_depth,
                                        dextra_dropout=config.args.delight_dropout,
@@ -134,10 +143,22 @@ class BertDeLightAttention(BertAttention):
                                        glt_shuffle=config.args.glt_shuffle,
                                        is_iclr_version=config.args.define_iclr
                                        )
+    
+    def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.FloatTensor] = None, head_mask: Optional[torch.FloatTensor] = None, encoder_hidden_states: Optional[torch.FloatTensor] = None, encoder_attention_mask: Optional[torch.FloatTensor] = None, past_key_value: Optional[Tuple[Tuple[torch.FloatTensor]]] = None, output_attentions: Optional[bool] = False) -> Tuple[torch.Tensor]:
+        hidden_states = self.dextra_layer(hidden_states)
+        return super().forward(hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, past_key_value, output_attentions)
+        
+
+class BertDeLightAttention(BertAttention):
+    def __init__(self, config, width_multiplier, dextra_depth, position_embedding_type=None):
+        super().__init__(config, position_embedding_type)
+        
+        self.self = BertDelightSelfAttention(config, width_multiplier, dextra_depth)
+        self.output = BertDeLightSelfOutput(config)
                                        
     def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.FloatTensor] = None, head_mask: Optional[torch.FloatTensor] = None, encoder_hidden_states: Optional[torch.FloatTensor] = None, encoder_attention_mask: Optional[torch.FloatTensor] = None, past_key_value: Optional[Tuple[Tuple[torch.FloatTensor]]] = None, output_attentions: Optional[bool] = False) -> Tuple[torch.Tensor]:
         # print("before ",hidden_states.shape)
-        hidden_states = self.dextra_layer(hidden_states)
+        
         # print("affter",hidden_states.shape)
         # assert False
         return super().forward(hidden_states, attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, past_key_value, output_attentions)
