@@ -82,7 +82,7 @@ class LitClassification(pl.LightningModule):
         loss = out.loss
 
         # self.log('train_loss', loss)
-        self.log(f"{state}_loss", loss)
+        self.log(f"{state}_loss", loss, on_step=False, on_epoch=True)
 
         acc = self.acc(out.logits, labels)
         pre = self.pre(out.logits, labels)
@@ -127,6 +127,6 @@ model_lit = LitClassification()
 trainer = pl.Trainer(gpus=1, 
                     max_epochs=5,
                     # limit_train_batches=0.5,
-                    default_root_dir="/content/drive/MyDrive/log_fake_review"
+                    default_root_dir="/content/drive/MyDrive/log_fake_review/bert_finetuned"
                     )
 trainer.fit(model_lit)
