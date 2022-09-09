@@ -127,6 +127,7 @@ model_lit = LitClassification()
 trainer = pl.Trainer(gpus=1, 
                     max_epochs=5,
                     # limit_train_batches=0.5,
-                    default_root_dir="/content/drive/MyDrive/log_fake_review/bert_finetuned"
+                    default_root_dir="/content/drive/MyDrive/log_fake_review/bert_finetuned",
+                    callbacks=[checkpoint_callback]
                     )
 trainer.fit(model_lit)
