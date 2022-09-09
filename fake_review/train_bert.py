@@ -88,10 +88,10 @@ class LitClassification(pl.LightningModule):
         pre = self.pre(out.logits, labels)
         rec = self.rec(out.logits, labels)
         f1 = self.f1(out.logits, labels)
-        self.log(f'{state}_acc', acc)
-        self.log(f'{state}_rec', rec)
-        self.log(f'{state}_pre', pre)
-        self.log(f'{state}_f1', f1)
+        self.log(f'{state}_acc', acc, on_step=False, on_epoch=True)
+        self.log(f'{state}_rec', rec, on_step=False, on_epoch=True)
+        self.log(f'{state}_pre', pre, on_step=False, on_epoch=True)
+        self.log(f'{state}_f1', f1, on_step=False, on_epoch=True)
 
         # self.log('train_acc', acc, on_step=True, on_epoch=False)
         return loss
