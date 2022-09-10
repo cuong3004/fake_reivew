@@ -54,13 +54,17 @@ class LitClassification(pl.LightningModule):
 
         self.student_model = DenyBertForSequenceClassification(config=config)
         self.teacher_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
-        self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/lightning_logs/version_0/checkpoints/bert_finetuned.bin"))
+        self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/bert_finetuned/lightning_logs/version_4/checkpoints/bert_finetuned.bin"))
         self.teacher_model.eval()
 
         # print(self.teacher_model)
 
         self.fit_dense = nn.Linear(config.hidden_size, 768)
         self.acc = torchmetrics.Accuracy()
+        self.f1 = torchmetrics.F1Score(num_classes=1, multiclass=False)
+        self.pre = torchmetrics.Precision(num_classes=1, multiclass=False)
+        self.rec = torchmetrics.Recall(num_classes=1, multiclass=False)
+        
 
     
     def train_dataloader(self):
@@ -69,11 +73,11 @@ class LitClassification(pl.LightningModule):
     
     def val_dataloader(self):
         dataset = CusttomData(self.df_valid, self.tokenizer)
-        return DataLoader(dataset, batch_size=64, num_workers=2)
+        return DataLoader(dataset, batch_size=32, num_workers=2)
     
     def test_dataloader(self):
         dataset = CusttomData(self.df_test, self.tokenizer)
-        return DataLoader(dataset, batch_size=64, num_workers=2)
+        return DataLoader(dataset, batch_size=32, num_workers=2)
 
 
     def configure_optimizers(self):
@@ -156,10 +160,16 @@ class LitClassification(pl.LightningModule):
         loss = rep_loss + att_loss + cls_loss
 
         # self.log('train_loss', loss)
-        self.log(f"{state}_loss", loss)
+        self.log(f"{state}_loss", loss, on_step=False, on_epoch=True)
 
         acc = self.acc(student_logits, labels)
-        self.log(f'{state}_acc', acc)
+        pre = self.pre(student_logits, labels)
+        rec = self.rec(student_logits, labels)
+        f1 = self.f1(student_logits, labels)
+        self.log(f'{state}_acc', acc, on_step=False, on_epoch=True)
+        self.log(f'{state}_rec', rec, on_step=False, on_epoch=True)
+        self.log(f'{state}_pre', pre, on_step=False, on_epoch=True)
+        self.log(f'{state}_f1', f1, on_step=False, on_epoch=True)
 
         # self.log('train_acc', acc, on_step=True, on_epoch=False)
         return loss
@@ -178,7 +188,15 @@ class LitClassification(pl.LightningModule):
         loss = self.share_batch(test_batch, "test")
 # 
 # from fake_review.transformer import TinyBertForSequenceClassification, BertTokenizer
-
+from pytorch_lightning.callbacks import ModelCheckpoint
+filename = f"model"
+checkpoint_callback = ModelCheckpoint(
+    filename=filename,
+    save_top_k=1,
+    verbose=True,
+    monitor='valid_loss',
+    mode='min',
+)
 # tokenizer = BertTokenizer("../../bert-base-uncased/vocab.txt")
 # %%
 model_lit = LitClassification()
@@ -186,6 +204,7 @@ model_lit = LitClassification()
 trainer = pl.Trainer(gpus=1, 
                     max_epochs=16,
                     # limit_train_batches=0.5,
-                    default_root_dir="/content/drive/MyDrive/log_fake_review"
+                    default_root_dir="/content/drive/MyDrive/log_fake_review/deny_bert",
+                    callbacks=[checkpoint_callback]
                     )
 trainer.fit(model_lit)
