@@ -50,7 +50,7 @@ class LitClassification(pl.LightningModule):
         
         self.student_model = BertForSequenceClassification(config=config)
         self.teacher_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
-        self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/lightning_logs/version_0/checkpoints/bert_finetuned.bin"))
+        self.teacher_model.load_state_dict(torch.load("/content/drive/MyDrive/log_fake_review/bert_finetuned/lightning_logs/version_4/checkpoints/bert_finetuned.bin"))
         self.teacher_model.eval()
 
         self.fit_dense = nn.Linear(config.hidden_size, 768)
@@ -183,12 +183,22 @@ class LitClassification(pl.LightningModule):
 # from fake_review.transformer import TinyBertForSequenceClassification, BertTokenizer
 
 # tokenizer = BertTokenizer("../../bert-base-uncased/vocab.txt")
+from pytorch_lightning.callbacks import ModelCheckpoint
+filename = f"model"
+checkpoint_callback = ModelCheckpoint(
+    filename=filename,
+    save_top_k=1,
+    verbose=True,
+    monitor='valid_loss',
+    mode='min',
+)
 # %%
 model_lit = LitClassification()
 # %%
 trainer = pl.Trainer(gpus=1, 
                     max_epochs=16,
                     # limit_train_batches=0.5,
-                    default_root_dir="/content/drive/MyDrive/log_fake_review",
+                    default_root_dir="/content/drive/MyDrive/log_fake_review/tiny_bert",
+                    callbacks=[checkpoint_callback]
                     )
 trainer.fit(model_lit)
