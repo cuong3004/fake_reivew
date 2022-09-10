@@ -50,12 +50,12 @@ class LitClassification(pl.LightningModule):
         return DataLoader(dataset, batch_size=64, num_workers=2)
     
     def val_dataloader(self):
-        dataset = CusttomData(self.df_train, self.tokenizer)
-        return DataLoader(dataset, batch_size=64, num_workers=2)
+        dataset = CusttomData(self.df_test, self.tokenizer)
+        return DataLoader(dataset, batch_size=32, num_workers=1)
     
     def test_dataloader(self):
-        dataset = CusttomData(self.df_train, self.tokenizer)
-        return DataLoader(dataset, batch_size=64, num_workers=2)
+        dataset = CusttomData(self.df_test, self.tokenizer)
+        return DataLoader(dataset, batch_size=32, num_workers=1)
 
 
     def configure_optimizers(self):
