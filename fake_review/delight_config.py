@@ -107,7 +107,14 @@ def base_architecture(args):
 # %%
 
 args = argparse.Namespace()
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--delight_emb_width_mult', default=2, type=int)
+
+args = parser.parse_args()
+
 base_architecture(args)
+print(args)
 
 # print(args)
 
