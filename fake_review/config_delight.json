@@ -17,10 +17,5 @@
     "type_vocab_size": 2,
     "use_cache": true,
     "vocab_size": 30522,
-    "num_labels":2,
-
-    "encode_min_depth": 4,
-    "encode_max_depth": 8,
-    "encode_width_mult": 2.0
-
+    "num_labels":2
   }

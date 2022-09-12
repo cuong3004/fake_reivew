@@ -13,8 +13,8 @@ import torch.optim as optim
 # from fake_bert.delight_modules.delight_transformer_layer import DeLighTTransformerEncoderLayer
 
 DEFAULT_WIDTH_MULTIPLIER = 2.0
-DEFAULT_MIN_DEXTRA_LAYERS = 4
-DEFAULT_MAX_DEXTRA_LAYERS = 8
+DEFAULT_MIN_DEXTRA_LAYERS = 8
+DEFAULT_MAX_DEXTRA_LAYERS = 16
 DEFAULT_BASE_GROUPS = 16
 MIN_ELEMENTS_PER_GROUP = 32
 DEFAULT_FFN_RED_FACTOR = 4

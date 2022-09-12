@@ -62,7 +62,7 @@ class LitClassification(pl.LightningModule):
     
     def train_dataloader(self):
         dataset = CusttomData(self.df_train, self.tokenizer)
-        return DataLoader(dataset, batch_size=64, num_workers=2)
+        return DataLoader(dataset, batch_size=64, num_workers=2, shuffle=True) 
     
     def val_dataloader(self):
         dataset = CusttomData(self.df_valid, self.tokenizer)
@@ -145,8 +145,8 @@ class LitClassification(pl.LightningModule):
             tmp_loss = F.mse_loss(self.fit_dense(student_rep), teacher_rep)
             rep_loss += tmp_loss
 
-        cls_loss = soft_cross_entropy(student_logits / 1.,
-                                            teacher_logits / 1.)
+        cls_loss = soft_cross_entropy(student_logits / 2.,
+                                            teacher_logits / 2.)
         
 
 
@@ -197,7 +197,7 @@ model_lit = LitClassification()
 # %%
 trainer = pl.Trainer(gpus=1, 
                     max_epochs=16,
-                    # limit_train_batches=0.5,
+                    limit_train_batches=0.2,
                     default_root_dir="/content/drive/MyDrive/log_fake_review/tiny_bert",
                     callbacks=[checkpoint_callback]
                     )
