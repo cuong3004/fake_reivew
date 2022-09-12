@@ -69,7 +69,7 @@ class LitClassification(pl.LightningModule):
     
     def train_dataloader(self):
         dataset = CusttomData(self.df_train, self.tokenizer)
-        return DataLoader(dataset, batch_size=64, num_workers=2)
+        return DataLoader(dataset, batch_size=64, num_workers=2, shuffle=True)
     
     def val_dataloader(self):
         dataset = CusttomData(self.df_valid, self.tokenizer)
@@ -202,8 +202,9 @@ checkpoint_callback = ModelCheckpoint(
 model_lit = LitClassification()
 # %%
 trainer = pl.Trainer(gpus=1, 
-                    max_epochs=16,
-                    # limit_train_batches=0.5,
+                    max_epochs=100,
+                    limit_train_batches=0.2,
+                    reload_dataloaders_every_n_epochs=1,
                     default_root_dir="/content/drive/MyDrive/log_fake_review/deny_bert_other",
                     callbacks=[checkpoint_callback]
                     )
